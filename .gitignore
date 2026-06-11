@@ -1,0 +1,37 @@
+# Node dependency directories
+node_modules/
+**/node_modules/
+
+# Local configuration and environment secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+**/.env
+**/.env.*
+
+# Local databases
+*.db
+*.sqlite
+leads.db
+**/leads.db
+
+# VSCode settings
+.vscode/
+**/.vscode/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+**/error.log
+**/*.log
+
+# OS metadata
+.DS_Store
+Thumbs.db
