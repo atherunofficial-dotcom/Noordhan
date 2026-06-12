@@ -96,13 +96,17 @@ let CACHED_MARKET_DATA = null;
 let LAST_LOGIN_ERROR = null;
 
 const getTOTP = () => {
-    let totp = new OTPAuth.TOTP({
-        algorithm: 'SHA1',
-        digits: 6,
-        period: 30,
-        secret: OTPAuth.Secret.fromBase32(process.env.ANGEL_TOTP)
-    });
-    return totp.generate();
+    try {
+        let totp = new OTPAuth.TOTP({
+            algorithm: 'SHA1',
+            digits: 6,
+            period: 30,
+            secret: OTPAuth.Secret.fromBase32(process.env.ANGEL_TOTP)
+        });
+        return totp.generate();
+    } catch (err) {
+        throw new Error(`Failed to generate TOTP: ${err.message}`);
+    }
 };
 
 const getHeaders = (token = "") => {
@@ -123,6 +127,20 @@ const getHeaders = (token = "") => {
 // 1. Function to Log in to Angel One
 const loginToAngelOne = async () => {
     console.log("⏳ Attempting a secure login to Angel One...");
+    
+    // Validate required credentials
+    const missing = [];
+    if (!process.env.ANGEL_CLIENT_CODE) missing.push("ANGEL_CLIENT_CODE");
+    if (!process.env.ANGEL_PASSWORD) missing.push("ANGEL_PASSWORD");
+    if (!process.env.ANGEL_TOTP) missing.push("ANGEL_TOTP");
+    if (!process.env.ANGEL_API_KEY) missing.push("ANGEL_API_KEY");
+    
+    if (missing.length > 0) {
+        LAST_LOGIN_ERROR = `Missing required environment variables: ${missing.join(", ")}`;
+        console.error(`❌ Login aborted: ${LAST_LOGIN_ERROR}`);
+        return;
+    }
+
     try {
         const loginPayload = {
             clientcode: process.env.ANGEL_CLIENT_CODE, 
