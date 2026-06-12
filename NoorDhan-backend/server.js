@@ -93,6 +93,7 @@ runMigrations();
 // Global variable to store our login token so we don't spam the login server
 let GLOBAL_JWT_TOKEN = null;
 let CACHED_MARKET_DATA = null;
+let LAST_LOGIN_ERROR = null;
 
 const getTOTP = () => {
     let totp = new OTPAuth.TOTP({
@@ -138,10 +139,13 @@ const loginToAngelOne = async () => {
         if (loginResponse.data && loginResponse.data.status) {
             GLOBAL_JWT_TOKEN = loginResponse.data.data.jwtToken;
             console.log("✅ Successfully logged in! Security token securely cached.");
+            LAST_LOGIN_ERROR = null;
         } else {
+            LAST_LOGIN_ERROR = loginResponse.data ? loginResponse.data.message : "Unknown error from Angel One";
             console.error("❌ Angel One Rejected Login. Exact Error:", loginResponse.data.message);
         }
     } catch (error) {
+         LAST_LOGIN_ERROR = error.message;
          console.error("❌ Login API Connection Error:", error.message);
     }
 };
@@ -195,7 +199,13 @@ const fetchMarketDataAndCache = async () => {
 // 3. API Endpoint to retrieve cached live market data
 app.get('/api/market-data', (req, res) => {
     if (!CACHED_MARKET_DATA) {
-        return res.status(503).json({ error: "Backend is currently syncing with market feed. Please wait..." });
+        return res.status(503).json({ 
+            error: "Backend is currently syncing with market feed. Please wait...",
+            details: {
+                hasToken: !!GLOBAL_JWT_TOKEN,
+                lastLoginError: LAST_LOGIN_ERROR
+            }
+        });
     }
     res.json(CACHED_MARKET_DATA);
 });
@@ -253,7 +263,14 @@ app.get('/health', async (req, res) => {
                 sqliteDb.get('SELECT 1', (err) => err ? reject(err) : resolve());
             });
         }
-        res.status(200).json({ status: "UP", database: "CONNECTED" });
+        res.status(200).json({ 
+            status: "UP", 
+            database: "CONNECTED",
+            angelOne: {
+                connected: !!GLOBAL_JWT_TOKEN,
+                lastError: LAST_LOGIN_ERROR
+            }
+        });
     } catch (err) {
         console.error("❌ Health check failure:", err.message);
         res.status(500).json({ status: "DOWN", error: err.message });
