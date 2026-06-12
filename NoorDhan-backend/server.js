@@ -3,7 +3,6 @@ const express = require('express');
 const cors = require('cors');
 const OTPAuth = require('otpauth');
 const axios = require('axios');
-const sqlite3 = require('sqlite3').verbose();
 const { Pool } = require('pg');
 const path = require('path');
 
@@ -43,6 +42,7 @@ if (usePostgres) {
     });
 } else {
     console.log("💾 No DATABASE_URL detected. Initializing local SQLite database...");
+    const sqlite3 = require('sqlite3').verbose();
     const dbPath = path.join(__dirname, 'leads.db');
     sqliteDb = new sqlite3.Database(dbPath, (err) => {
         if (err) {
@@ -138,8 +138,6 @@ const loginToAngelOne = async () => {
         if (loginResponse.data && loginResponse.data.status) {
             GLOBAL_JWT_TOKEN = loginResponse.data.data.jwtToken;
             console.log("✅ Successfully logged in! Security token securely cached.");
-            // Fetch initial market data immediately on login success
-            await fetchMarketDataAndCache();
         } else {
             console.error("❌ Angel One Rejected Login. Exact Error:", loginResponse.data.message);
         }
@@ -270,4 +268,6 @@ app.listen(PORT, async () => {
     console.log(`✅ Secure backend is running on port ${PORT}!`);
     // Trigger login on server startup
     await loginToAngelOne();
+    // Fetch initial market data once on server startup
+    await fetchMarketDataAndCache();
 });
