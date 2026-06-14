@@ -5,10 +5,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description"
-    content="NoorDhan Investments – Angel One Authorized Partner. Open free Demat account, trade equity, F&O, MCX commodities with 16+ years expert guidance.">
+    content="InvestorsHub – Angel One Authorized Partner. Open free Demat account, trade equity, F&O, MCX commodities with 16+ years expert guidance.">
   <meta name="keywords"
-    content="demat account, angel one, stock market, trading, F&O, MCX, Bengaluru, Javed Ahmed, NoorDhan">
-  <title>NoorDhan Investments – Trade Smarter. Invest Better.</title>
+    content="demat account, angel one, stock market, trading, F&O, MCX, Bengaluru, Javed Ahmed, InvestorsHub">
+  <title>InvestorsHub – Trade Smarter. Invest Better.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap"
@@ -625,7 +625,7 @@
       max-width: 560px;
     }
 
-    /* ── WHY NOORDHAN / BENTO ── */
+    /* ── WHY INVESTORSHUB / BENTO ── */
     .why-section {
       background: var(--deep);
     }
@@ -1740,8 +1740,8 @@
   <!-- NAV -->
   <nav>
     <a href="#" class="logo">
-      <div class="logo-icon">N</div>
-      <span class="logo-text">Noor<span>Dhan</span></span>
+      <div class="logo-icon">I</div>
+      <span class="logo-text">Investors<span>Hub</span></span>
     </a>
     <ul class="nav-links">
       <li><a href="#features">Features</a></li>
@@ -1836,22 +1836,22 @@
         <div class="movers-row">
           <div class="mover-box gainer">
             <div class="mover-head">
-              <span class="mover-sym">TATASTEEL</span>
+              <span class="mover-sym" id="live-gainer-sym">--</span>
               <span class="mover-tag">Gainer</span>
             </div>
             <div class="mover-details">
-              <span class="m-price">₹168.40</span>
-              <span class="m-pct">+4.15%</span>
+              <span class="m-price" id="live-gainer-price">--</span>
+              <span class="m-pct" id="live-gainer-pct">--</span>
             </div>
           </div>
           <div class="mover-box loser">
             <div class="mover-head">
-              <span class="mover-sym">INFY</span>
+              <span class="mover-sym" id="live-loser-sym">--</span>
               <span class="mover-tag">Loser</span>
             </div>
             <div class="mover-details">
-              <span class="m-price">₹1,492.00</span>
-              <span class="m-pct">-2.80%</span>
+              <span class="m-price" id="live-loser-price">--</span>
+              <span class="m-pct" id="live-loser-pct">--</span>
             </div>
           </div>
         </div>
@@ -1874,10 +1874,10 @@
     </div>
   </section>
 
-  <!-- WHY NOORDHAN -->
+  <!-- WHY INVESTORSHUB -->
   <section class="why-section fade-up" id="features">
-    <div class="section-eyebrow">Why NoorDhan</div>
-    <h2 class="section-title">Why Traders Choose<br>NoorDhan Investments</h2>
+    <div class="section-eyebrow">Why InvestorsHub</div>
+    <h2 class="section-title">Why Traders Choose<br>InvestorsHub</h2>
     <p class="section-sub">Built around one simple idea — your financial success is our success. Here's what sets us
       apart.</p>
 
@@ -1942,7 +1942,7 @@
         <iframe
           src="https://s.tradingview.com/widgetembed/?frameElementId=tv_chart_fo&symbol=BSE%3ASENSEX&interval=15&hidesidetoolbar=0&hidetoptoolbar=0&symboledit=1&saveimage=0&toolbarbg=000000&studies=%5B%5D&theme=dark&style=1&timezone=Asia%2FKolkata&withdateranges=1&showpopupbutton=1&locale=en"
           style="width: 100%; height: 460px; border: none; display: block;" id="tv_chart_fo" allowtransparency="true"
-          scrolling="no" allowfullscreen title="NoorDhan – Live Interactive Chart Desk"></iframe>
+          scrolling="no" allowfullscreen title="InvestorsHub – Live Interactive Chart Desk"></iframe>
       </div>
     </div>
   </section>
@@ -2404,7 +2404,7 @@
   <!-- DISCLAIMER -->
   <div class="disclaimer">
     ⚠️ <strong>Disclaimer:</strong> Investments in securities markets are subject to market risks. Read all related
-    documents carefully before investing. NoorDhan Investments is an Authorized Person of Angel One Limited (formerly
+    documents carefully before investing. InvestorsHub is an Authorized Person of Angel One Limited (formerly
     Angel Broking). Registration No.: JJHM. This website is for informational purposes only and does not constitute
     investment advice.
   </div>
@@ -2414,8 +2414,8 @@
     <div class="footer-grid">
       <div class="footer-brand">
         <a href="#" class="logo" style="margin-bottom:4px;">
-          <div class="logo-icon">N</div>
-          <span class="logo-text">Noor<span>Dhan</span></span>
+          <div class="logo-icon">I</div>
+          <span class="logo-text">Investors<span>Hub</span></span>
         </a>
         <p>Empowering Your Financial Journey. Angel One Authorized Person with 16+ years of market experience.</p>
         <div class="footer-partner">Angel One · Authorized Person · JJHM</div>
@@ -2449,7 +2449,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2026 NoorDhan Investments. All rights reserved.</span>
+      <span>© 2026 InvestorsHub. All rights reserved.</span>
       <span>Authorized Person of Angel One Limited · SEBI Registered</span>
     </div>
   </footer>
@@ -2677,6 +2677,51 @@
 
     fetchLiveMarketPrices();
     setInterval(fetchLiveMarketPrices, 5000);
+
+    // ── LIVE TOP MOVERS FETCHING FROM ANGEL ONE BACKEND ──
+    async function fetchLiveTopMovers() {
+      try {
+        const [gainerRes, loserRes] = await Promise.all([
+          fetch('https://noordhan-backend.onrender.com/api/top-movers?type=gainer'),
+          fetch('https://noordhan-backend.onrender.com/api/top-movers?type=loser')
+        ]);
+        const gainerData = await gainerRes.json();
+        const loserData = await loserRes.json();
+
+        // Update Gainer info
+        if (gainerData && gainerData.status && gainerData.data && gainerData.data.length > 0) {
+          const item = gainerData.data[0];
+          const sym = item.tradingSymbol || item.tradingsymbol || item.symbol || '--';
+          const rawLtp = item.ltp || item.price || '--';
+          const ltp = isNaN(rawLtp) ? rawLtp : `₹${parseFloat(rawLtp).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          const rawPct = item.percentChange !== undefined ? item.percentChange : (item.percentchange !== undefined ? item.percentchange : (item.perchange !== undefined ? item.perchange : '--'));
+          const pct = isNaN(rawPct) ? rawPct : `+${parseFloat(rawPct).toFixed(2)}%`;
+          
+          if (document.getElementById('live-gainer-sym')) document.getElementById('live-gainer-sym').innerText = sym;
+          if (document.getElementById('live-gainer-price')) document.getElementById('live-gainer-price').innerText = ltp;
+          if (document.getElementById('live-gainer-pct')) document.getElementById('live-gainer-pct').innerText = pct;
+        }
+
+        // Update Loser info
+        if (loserData && loserData.status && loserData.data && loserData.data.length > 0) {
+          const item = loserData.data[0];
+          const sym = item.tradingSymbol || item.tradingsymbol || item.symbol || '--';
+          const rawLtp = item.ltp || item.price || '--';
+          const ltp = isNaN(rawLtp) ? rawLtp : `₹${parseFloat(rawLtp).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          const rawPct = item.percentChange !== undefined ? item.percentChange : (item.percentchange !== undefined ? item.percentchange : (item.perchange !== undefined ? item.perchange : '--'));
+          const pct = isNaN(rawPct) ? rawPct : `${rawPct > 0 ? '+' : ''}${parseFloat(rawPct).toFixed(2)}%`;
+
+          if (document.getElementById('live-loser-sym')) document.getElementById('live-loser-sym').innerText = sym;
+          if (document.getElementById('live-loser-price')) document.getElementById('live-loser-price').innerText = ltp;
+          if (document.getElementById('live-loser-pct')) document.getElementById('live-loser-pct').innerText = pct;
+        }
+      } catch (err) {
+        console.error("Failed to fetch top movers:", err);
+      }
+    }
+
+    fetchLiveTopMovers();
+    setInterval(fetchLiveTopMovers, 15000);
 
     // ── CANDLESTICK ANIMATION ──
     function animateChart() {
