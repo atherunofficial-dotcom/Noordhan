@@ -228,19 +228,31 @@ app.get('/api/market-data', (req, res) => {
     res.json(CACHED_MARKET_DATA);
 });
 
-// API Endpoint to fetch top movers (Gainers/Losers) from Angel One
 app.get('/api/top-movers', async (req, res) => {
     if (!GLOBAL_JWT_TOKEN) return res.status(401).json({ error: "Logging in..." });
+
     try {
         const dataType = req.query.type === 'loser' ? 'PercPriceLosers' : 'PercPriceGainers';
-        const moversPayload = { datatype: dataType, expirytype: "NEAR" };
+        
+        // Changed expirytype to empty string to pull standard NSE Equity stocks
+        const moversPayload = {
+            datatype: dataType, 
+            expirytype: "" 
+        };
+
         const moversResponse = await axios.post(
             'https://apiconnect.angelbroking.com/rest/secure/angelbroking/marketData/v1/gainersLosers',
             moversPayload,
             { headers: getHeaders(GLOBAL_JWT_TOKEN) }
         );
+
+        // This will print Angel One's response straight to the Render log
+        console.log(`[Top Movers] ${dataType} Fetched. Status: ${moversResponse.data.status}`);
+
         res.json(moversResponse.data);
     } catch (error) {
+        // This will print the exact error to Render if it fails
+        console.error("[Top Movers Error]:", error.response ? error.response.data : error.message);
         res.status(500).json({ error: "Failed to fetch top movers" });
     }
 });
