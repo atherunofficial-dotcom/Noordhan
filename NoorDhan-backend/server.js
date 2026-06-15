@@ -228,10 +228,11 @@ app.get('/api/market-data', (req, res) => {
     res.json(CACHED_MARKET_DATA);
 });
 
-// Top Movers Cache Variables
+// Top Movers Cache Variables & Locks
 let cachedGainers = [];
 let cachedLosers = [];
 let lastMoverFetchTime = 0;
+let isFetchingMovers = false;
 
 app.get('/api/top-movers', async (req, res) => {
     if (!GLOBAL_JWT_TOKEN) return res.status(401).json({ error: "Logging in..." });
@@ -239,9 +240,11 @@ app.get('/api/top-movers', async (req, res) => {
     const type = req.query.type;
     const now = Date.now();
 
-    try {
-        // Only fetch from Angel One if 60 seconds have passed since the last fetch
-        if (now - lastMoverFetchTime > 60000) {
+    // Only fetch if 60s have passed AND we are not currently fetching
+    if (now - lastMoverFetchTime > 60000 && !isFetchingMovers) {
+        isFetchingMovers = true; // Lock the fetch process
+        
+        try {
             // 1. Fetch Gainers
             const gainersRes = await axios.post(
                 'https://apiconnect.angelbroking.com/rest/secure/angelbroking/marketData/v1/gainersLosers',
@@ -252,7 +255,10 @@ app.get('/api/top-movers', async (req, res) => {
                 cachedGainers = gainersRes.data.data;
             }
 
-            // 2. Fetch Losers
+            // 2. Wait 2 seconds to strictly respect Angel One's rate limit between calls
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // 3. Fetch Losers
             const losersRes = await axios.post(
                 'https://apiconnect.angelbroking.com/rest/secure/angelbroking/marketData/v1/gainersLosers',
                 { datatype: 'PercPriceLosers', expirytype: "" }, // Kept empty string to pull standard NSE Equity stocks
@@ -262,20 +268,18 @@ app.get('/api/top-movers', async (req, res) => {
                 cachedLosers = losersRes.data.data;
             }
 
-            lastMoverFetchTime = now;
-            console.log("[Top Movers] Successfully cached new Gainers/Losers from Angel One");
+            lastMoverFetchTime = Date.now();
+            console.log("[Top Movers] Successfully cached new Gainers/Losers");
+        } catch (error) {
+            console.error("[Top Movers API Error]:", error.response ? error.response.data : error.message);
+        } finally {
+            isFetchingMovers = false; // Unlock the fetch process
         }
-
-        // Instantly return the cached data to the frontend without hitting the API rate limit!
-        const responseData = type === 'loser' ? cachedLosers : cachedGainers;
-        res.json({ status: true, data: responseData });
-
-    } catch (error) {
-        console.error("[Top Movers Error]:", error.response ? error.response.data : error.message);
-        // If the API fails, fall back to whatever is currently in the cache
-        const responseData = type === 'loser' ? cachedLosers : cachedGainers;
-        res.json({ status: true, data: responseData });
     }
+
+    // Instantly return whatever is in the cache
+    const responseData = type === 'loser' ? cachedLosers : cachedGainers;
+    res.json({ status: true, data: responseData });
 });
 
 // 4. API Endpoint to capture and save user leads
