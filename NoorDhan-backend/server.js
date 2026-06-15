@@ -228,32 +228,53 @@ app.get('/api/market-data', (req, res) => {
     res.json(CACHED_MARKET_DATA);
 });
 
+// Top Movers Cache Variables
+let cachedGainers = [];
+let cachedLosers = [];
+let lastMoverFetchTime = 0;
+
 app.get('/api/top-movers', async (req, res) => {
     if (!GLOBAL_JWT_TOKEN) return res.status(401).json({ error: "Logging in..." });
 
+    const type = req.query.type;
+    const now = Date.now();
+
     try {
-        const dataType = req.query.type === 'loser' ? 'PercPriceLosers' : 'PercPriceGainers';
-        
-        // Changed expirytype to empty string to pull standard NSE Equity stocks
-        const moversPayload = {
-            datatype: dataType, 
-            expirytype: "" 
-        };
+        // Only fetch from Angel One if 60 seconds have passed since the last fetch
+        if (now - lastMoverFetchTime > 60000) {
+            // 1. Fetch Gainers
+            const gainersRes = await axios.post(
+                'https://apiconnect.angelbroking.com/rest/secure/angelbroking/marketData/v1/gainersLosers',
+                { datatype: 'PercPriceGainers', expirytype: "" }, // Kept empty string to pull standard NSE Equity stocks
+                { headers: getHeaders(GLOBAL_JWT_TOKEN) }
+            );
+            if (gainersRes.data.status && gainersRes.data.data) {
+                cachedGainers = gainersRes.data.data;
+            }
 
-        const moversResponse = await axios.post(
-            'https://apiconnect.angelbroking.com/rest/secure/angelbroking/marketData/v1/gainersLosers',
-            moversPayload,
-            { headers: getHeaders(GLOBAL_JWT_TOKEN) }
-        );
+            // 2. Fetch Losers
+            const losersRes = await axios.post(
+                'https://apiconnect.angelbroking.com/rest/secure/angelbroking/marketData/v1/gainersLosers',
+                { datatype: 'PercPriceLosers', expirytype: "" }, // Kept empty string to pull standard NSE Equity stocks
+                { headers: getHeaders(GLOBAL_JWT_TOKEN) }
+            );
+            if (losersRes.data.status && losersRes.data.data) {
+                cachedLosers = losersRes.data.data;
+            }
 
-        // This will print Angel One's response straight to the Render log
-        console.log(`[Top Movers] ${dataType} Fetched. Status: ${moversResponse.data.status}`);
+            lastMoverFetchTime = now;
+            console.log("[Top Movers] Successfully cached new Gainers/Losers from Angel One");
+        }
 
-        res.json(moversResponse.data);
+        // Instantly return the cached data to the frontend without hitting the API rate limit!
+        const responseData = type === 'loser' ? cachedLosers : cachedGainers;
+        res.json({ status: true, data: responseData });
+
     } catch (error) {
-        // This will print the exact error to Render if it fails
         console.error("[Top Movers Error]:", error.response ? error.response.data : error.message);
-        res.status(500).json({ error: "Failed to fetch top movers" });
+        // If the API fails, fall back to whatever is currently in the cache
+        const responseData = type === 'loser' ? cachedLosers : cachedGainers;
+        res.json({ status: true, data: responseData });
     }
 });
 
